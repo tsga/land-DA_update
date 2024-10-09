@@ -75,8 +75,20 @@ if [[ ! -e ${OUTDIR}/DA ]]; then
 fi 
 
 if [[ ! -e $JEDIWORKDIR ]]; then 
-    mkdir $JEDIWORKDIR
+    mkdir $JEDIWORKDIR      # ${WORKDIR}/jedi/
     mkdir $JEDIWORKDIR/restarts/
+    for ie in $(seq $ensemble_size)
+    do
+        # mem_ens="mem000" 
+        if [$ensemble_size  == 1 ]; then 
+            mem_ens="mem000" 
+        else 
+            mem_ens="mem`printf %03i $ie`"
+        fi 
+        mkdir $JEDIWORKDIR/restarts/${mem_ens}
+    done
+    wait
+
     ln -s ${TPATH}/${TSTUB}* ${JEDIWORKDIR}
     ln -s ${OUTDIR} ${JEDIWORKDIR}/output
 fi
@@ -104,35 +116,63 @@ HP=`echo $PREVDATE | cut -c9-10`
 FILEDATE=${YYYY}${MM}${DD}.${HH}0000
 
 if  [[ $SAVE_TILE == "YES" ]]; then
-for tile in 1 2 3 4 5 6 
-do
-cp ${RSTRDIR}/${FILEDATE}.sfc_data.tile${tile}.nc  ${RSTRDIR}/${FILEDATE}.sfc_data_back.tile${tile}.nc
-done
-fi 
+    
+    for ie in $(seq $ensemble_size)
+    do
+        # mem_ens="mem000" 
+        if [$ensemble_size  == 1 ]; then 
+            mem_ens="mem000" 
+        else 
+            mem_ens="mem`printf %03i $ie`"
+        fi 
+
+        MEM_WORKDIR=${WORKDIR}/${mem_ens}   
+        RSTRDIR=${WORKDIR}/${mem_ens}       #RSTRDIR=${MEM_WORKDIR}
+
+        # save tile copy
+        for tile in 1 2 3 4 5 6 
+        do 
+            cp ${RSTRDIR}/${FILEDATE}.sfc_data.tile${tile}.nc  ${RSTRDIR}/${FILEDATE}.sfc_data_back.tile${tile}.nc
+            #cp ${MEM_WORKDIR}/${FILEDATE}.sfc_data.tile${tile}.nc  ${MEM_WORKDIR}/${FILEDATE}.sfc_data_back.tile${tile}.nc
+        done
+    done
+    wait
+fi
 
 #stage restarts for applying JEDI update (files will get directly updated)
-for tile in 1 2 3 4 5 6 
+for ie in $(seq $ensemble_size)
 do
-  ln -fs ${RSTRDIR}/${FILEDATE}.sfc_data.tile${tile}.nc ${JEDIWORKDIR}/restarts/${FILEDATE}.sfc_data.tile${tile}.nc
+    # mem_ens="mem000" 
+    if [$ensemble_size  == 1 ]; then 
+        mem_ens="mem000" 
+    else 
+        mem_ens="mem`printf %03i $ie`"
+    fi  
+    RSTRDIR=${WORKDIR}/${mem_ens}       #RSTRDIR=${MEM_WORKDIR}
+    for tile in 1 2 3 4 5 6 
+    do
+    ln -fs ${RSTRDIR}/${FILEDATE}.sfc_data.tile${tile}.nc ${JEDIWORKDIR}/restarts/${mem_ens}/${FILEDATE}.sfc_data.tile${tile}.nc
+    done
+
+    cres_file=${JEDIWORKDIR}/restarts/${mem_ens}/${FILEDATE}.coupler.res
+    if [[ -e  ${RSTRDIR}/${FILEDATE}.coupler.res ]]; then 
+        ln -sf ${RSTRDIR}/${FILEDATE}.coupler.res $cres_file
+    else #  if not present, need to create coupler.res for JEDI 
+        cp ${LANDDADIR}/template.coupler.res $cres_file
+
+        sed -i -e "s/XXYYYY/${YYYY}/g" $cres_file
+        sed -i -e "s/XXMM/${MM}/g" $cres_file
+        sed -i -e "s/XXDD/${DD}/g" $cres_file
+        sed -i -e "s/XXHH/${HH}/g" $cres_file
+
+        sed -i -e "s/XXYYYP/${YYYP}/g" $cres_file
+        sed -i -e "s/XXMP/${MP}/g" $cres_file
+        sed -i -e "s/XXDP/${DP}/g" $cres_file
+        sed -i -e "s/XXHP/${HP}/g" $cres_file
+
+    fi 
 done
-cres_file=${JEDIWORKDIR}/restarts/${FILEDATE}.coupler.res
-if [[ -e  ${RSTRDIR}/${FILEDATE}.coupler.res ]]; then 
-    ln -sf ${RSTRDIR}/${FILEDATE}.coupler.res $cres_file
-else #  if not present, need to create coupler.res for JEDI 
-    cp ${LANDDADIR}/template.coupler.res $cres_file
-
-    sed -i -e "s/XXYYYY/${YYYY}/g" $cres_file
-    sed -i -e "s/XXMM/${MM}/g" $cres_file
-    sed -i -e "s/XXDD/${DD}/g" $cres_file
-    sed -i -e "s/XXHH/${HH}/g" $cres_file
-
-    sed -i -e "s/XXYYYP/${YYYP}/g" $cres_file
-    sed -i -e "s/XXMP/${MP}/g" $cres_file
-    sed -i -e "s/XXDP/${DP}/g" $cres_file
-    sed -i -e "s/XXHP/${HP}/g" $cres_file
-
-fi 
-
+wait
 
 ################################################
 # 2. PREPARE OBS FILES
