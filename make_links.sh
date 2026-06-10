@@ -4,7 +4,8 @@ source detect_machine.sh
 
 if [[ ${MACHINE_ID} == 'ursa' ]]; then
     echo "linking GDASApp lib paths on URSA"
-    GDASApp_path=/scratch4/NCEPDEV/land/APPS/Land_GDASApp
+    GDASApp_path=/scratch4/NCEPDEV/land/APPS/Land_GDASApp 
+    #GDASApp_path=scratch3/NCEPDEV/land/Tseganeh.Gichamo/global-workflow/sorc/gdas.cd  
     fixorog=/scratch3/NCEPDEV/global/role.glopara/fix/orog/20240917
     obs=/scratch3/NCEPDEV/global/role.glopara/fix/gdas/obs/20240213
     snow=/scratch3/NCEPDEV/global/role.glopara/fix/gdas/snow/20241210
@@ -39,11 +40,11 @@ ln -fs ${GDASApp_path}/parm ${HOMEgfs}/parm/gdas
 
 # link fix and fv3files
 
-fv3files="jedi/fv3-jedi/Data/fv3files"
-if [[ -e $fv3files ]]; then
-  rm $fv3files
-fi
-ln -fs $fv3jedi/fv3files  $fv3files
+#fv3files="jedi/fv3-jedi/Data/fv3files"
+#if [[ -e $fv3files ]]; then
+#  rm $fv3files
+#fi
+#ln -fs $fv3jedi/fv3files  $fv3files
 
 if [[ -e  "${HOMEgfs}/fix/orog" ]]; then
   echo "removing homegfs/fix/orog"
