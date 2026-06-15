@@ -60,18 +60,9 @@ export JEDI_EXECDIR=${JEDI_EXECDIR:-"${GDASApp_root}/build/bin/"}
 # (March 2024, using own fieldMetaData override file)
 JEDI_STATICDIR=${LANDDADIR}/jedi/fv3-jedi/Data/
 
-# set to "YES" to use apply_incr and IMS_proc execs from GDASAppa
-# set to "NO" to use apply_incr and IMS_proc execs from workflow provided directory
-# Currently only support "YES" as of 01/28/2026
-UseGDASAppExec="YES"
-
-if [[ $UseGDASAppExec == "YES" ]]; then 
-    FIMS_EXECDIR=${LANDDADIR}/GDASApp/build/bin/
-    INCR_EXECDIR=${LANDDADIR}/GDASApp/build/bin/
-else
-    FIMS_EXECDIR=${LANDDADIR}/IMS_proc/exec/bin/
-    INCR_EXECDIR=${LANDDADIR}/add_jedi_incr/exec/bin/
-fi
+# As of 01/28/202 opnly GDASAPPExec supported 
+FIMS_EXECDIR=${LANDDADIR}/GDASApp/build/bin/
+INCR_EXECDIR=${LANDDADIR}/GDASApp/build/bin/
 
 # storage settings 
 
@@ -406,25 +397,32 @@ else
 fi
 #fi
 
-
-################################################
-# 5. ARCHIVE & CLEAN UP
-################################################
-
-# keep IMS IODA file
-if [ $SAVE_IMS == "YES"  ] && [ $UseGDASAppExec == "NO" ]; then
-  if [[ -e ${JEDIWORKDIR}/ioda.IMSscf.${YYYY}${MM}${DD}.${TSTUB}.nc ]]; then
-    yes |cp -u ${JEDIWORKDIR}/ioda.IMSscf.${YYYY}${MM}${DD}.${TSTUB}.nc ${OUTDIR}/DA/IMSproc/
-  fi
+#Copy analysis=bkg+inc back to workdir
+if [[ "$ensemble_size" -gt 1  ]]; then
+    for ie in $(seq 1 $ensemble_size)
+    do
+        mem_ens="mem`printf %03i $ie`"
+        for tile in $(seq 1 $ntiles)
+        do
+        cp ${JEDIWORKDIR}/anl/${mem_ens}/${FILEDATE}.sfc_data.tile${tile}.nc  ${WORKDIR}/${mem_ens}/
+        done
+    done
+    #TODO: ensmean outputs (anl and incr based on yaml settings)
+else
+     for tile in $(seq 1 $ntiles)
+     do
+        cp ${JEDIWORKDIR}/anl/${FILEDATE}.sfc_data.tile${tile}.nc  ${WORKDIR}/
+     done	
 fi
 
-if [ $SAVE_IMS == "YES"  ] && [ $UseGDASAppExec == "YES" ]; then
+# keep IMS IODA file
+if [ $SAVE_IMS == "YES"  ]; then
   if [[ -e ${JEDIWORKDIR}/obs/gdas.t00z.ims_snow.tm00.nc ]]; then
     yes |cp -u ${JEDIWORKDIR}/obs/gdas.t00z.ims_snow.tm00.nc ${OUTDIR}/DA/IMSproc/ioda.IMSscf.${YYYY}${MM}${DD}.${TSTUB}.nc
   fi
 fi
 
-#Diag and inc files are now saved by snow_det_config
+#Diag and inc files are now saved to OUTDIR by snow_det_config
 
 # clean up 
 if [[ $KEEPJEDIDIR == "NO" ]]; then
