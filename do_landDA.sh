@@ -424,17 +424,7 @@ if [ $SAVE_IMS == "YES"  ] && [ $UseGDASAppExec == "YES" ]; then
   fi
 fi
 
-# keep diag files
-if [ $SAVE_HOFX == "YES"  ] && [ $UseGDASAppExec == "YES" ]; then
-    yes |cp -u ${JEDIWORKDIR}/diags/diag_*${YYYY}${MM}${DD}*.nc ${OUTDIR}/DA/jedi_anl/
-fi
-
-# keep increments
-if [ $SAVE_INCR == "YES" ] && [ $do_DA == "YES" ] && [ $UseGDASAppExec == "NO" ]; then
-   if [[ "$ens_size" -eq 1  ]]; then
-    yes |cp -u ${JEDIWORKDIR}/snowinc.${FILEDATE}.sfc_data.tile*.nc  ${OUTDIR}/DA/jedi_incr/
-   fi
-fi
+#Diag and inc files are now saved by snow_det_config
 
 # clean up 
 if [[ $KEEPJEDIDIR == "NO" ]]; then
