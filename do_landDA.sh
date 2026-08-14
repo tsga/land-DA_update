@@ -422,7 +422,7 @@ if [ $SAVE_IMS == "YES"  ]; then
   fi
 fi
 
-#Diag and inc files are now saved to OUTDIR by snow_det_config
+#Diag and inc files are now saved to OUTDIR by parmgdas/snow/(det/letkf)config
 
 # clean up 
 if [[ $KEEPJEDIDIR == "NO" ]]; then
